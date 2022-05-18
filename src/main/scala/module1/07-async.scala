@@ -1,10 +1,16 @@
 package module1
 
-import java.util.concurrent.{Callable, Executor, ExecutorService, Executors, ForkJoinPool, ThreadPoolExecutor}
+import module1.threads.async
+import module1.utils.NameableThreads
+
+import java.io.File
+import java.util.{Timer, TimerTask}
+import java.util.concurrent.{Callable, Executor, ExecutorService, Executors, ForkJoinPool, ThreadFactory, ThreadPoolExecutor}
 import scala.collection.mutable
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.language.postfixOps
+import scala.concurrent.{Await, ExecutionContext, Future, Promise, TimeoutException}
+import scala.io.{BufferedSource, Source}
+import scala.language.{existentials, postfixOps}
 import scala.util.{Failure, Success, Try}
 
 object threads {
@@ -130,40 +136,136 @@ object threads {
 
 object executor {
 
-      val pool1: ExecutorService = Executors.newFixedThreadPool(2)
-      val pool2: ExecutorService = Executors.newCachedThreadPool()
+      val pool1: ExecutorService = Executors.newFixedThreadPool(2, NameableThreads("fixed-pool-1"))
+      val pool2: ExecutorService = Executors.newCachedThreadPool(NameableThreads("cached-pool-2"))
       val pool3: ExecutorService = Executors.newWorkStealingPool(4)
+      val pool4: ExecutorService = Executors.newSingleThreadExecutor(NameableThreads("singleThread-pool-4"))
 
+
+}
+
+object tryObj{
+
+
+  def readFromFile(): List[Int] = {
+
+    val s = Source.fromFile(new File("ints.txt"))
+
+    val result = try {
+      s.getLines().toList.map(_.toInt)
+    } catch {
+      case e: Exception =>
+        println(e.getMessage)
+        Nil
+    } finally {
+      s.close()
+    }
+    result
+  }
+
+  def readFromFile2(): Try[List[String]] = {
+
+    val s: Try[BufferedSource] = Try(Source.fromFile(new File("ints.txt")))
+    def lines(s: Source): Try[List[String]] = Try(s.getLines().toList)
+
+    val result: Try[List[String]] = for{
+      src <- s
+      l <- lines(src)
+    } yield l
+
+    s.foreach(_.close())
+
+    result
+  }
 
 }
 
 
 object future{
+  def getRatesLocation1(implicit ec: ExecutionContext) = Future({
+    Thread.sleep(1000)
+    println(s"GetLocation1 - ${Thread.currentThread().getName}")
+    10
+  })
 
-  import scala.concurrent.ExecutionContext.Implicits.global
+  def getRatesLocation2(implicit ec: ExecutionContext) = Future({
+    Thread.sleep(2000)
+    println(s"GetLocation2 - ${Thread.currentThread().getName}")
+    20
+  })
 
-  val f1 = Future(2 + 2)
-  val f2 = Future.failed(new Exception("Ooops"))
-  val f3 = Future.successful(2 + 2)
-  val f4 = Future.fromTry(Try(1 / 0))
+  def printFutureRunningTime[T](v: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
 
-  val v = f1.map(i => i + 1)
-
-  for{
-    v1 <- Future(2 + 2)
-    v2 <- Future(2 + 2)
-  } yield v1 + v2
-
-  val r: Unit = f1.onComplete {
-    case Failure(exception) => println(exception.getMessage)
-    case Success(value) => value + 1
+    for{
+      start <- Future.successful(System.currentTimeMillis())
+      r <- v
+      end <- Future.successful(System.currentTimeMillis())
+      _ <- Future.successful(println(s"Execution time ${end -start}"))
+    } yield r
   }
 
-  val r2: Int = Await.result(f1, 5 second)
-  val r3: Future[Int] = Await.ready(f1, 5 second)
+}
+
+
+object promise{
+
+  val p1: Promise[Int] = Promise[Int]
+  val f1: Future[Int] = p1.future
 
 
 
+
+
+
+
+
+
+
+
+
+  object FutureSyntax {
+
+    implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+
+    def map[T, B](future: Future[T])(f: T => B): Future[B] = {
+      val p = Promise[B]
+      future.onComplete {
+        case Failure(exception) => p.failure(exception)
+        case Success(value) => p.success(f(value))
+      }
+      p.future
+    }
+
+    def flatMap[T, B](future: Future[T])(f: T => Future[B]): Future[B] = ???
+
+
+    def make[T](v: => T)(implicit ec: ExecutionContext): Future[T] = {
+      val p = Promise[T]
+      val r = new Runnable {
+        override def run(): Unit = {
+          p.complete(Try(v))
+        }
+      }
+      ec.execute(r)
+      p.future
+    }
+
+
+
+    def make[T](v: => T, timeout: Long): Future[T] = {
+      val p = Promise[T]
+      val timer = new Timer(true)
+      val timerTask = new TimerTask {
+        override def run(): Unit = ???
+      }
+      timer.schedule(timerTask, timeout)
+      ???
+
+    }
+
+
+
+  }
 
 
 }

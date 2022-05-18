@@ -1,74 +1,75 @@
 package module1
 
-import java.util.concurrent.{Callable, Future}
+
+
+import java.util.concurrent.Callable
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 object App {
   def main(args: Array[String]): Unit = {
 
 
-    println(s"Hello from ${Thread.currentThread().getName()}")
+    println(s"Hello from ${Thread.currentThread().getName}")
 
-//    val t1 = new threads.Thread1
-//    val t2 = new threads.Thread1
+
+    def action(v: Int): Int = {
+      Thread.sleep(1000)
+      println(s"Action in ${Thread.currentThread().getName} -- $v")
+      v
+    }
+
+    val ec = scala.concurrent.ExecutionContext.Implicits.global
+    val ec2 = ExecutionContext.fromExecutor(executor.pool1)
+    val ec3 = ExecutionContext.fromExecutor(executor.pool2)
+    val ec4 = ExecutionContext.fromExecutor(executor.pool3)
+    val ec5 = ExecutionContext.fromExecutor(executor.pool4)
+
+//    def rates4 = {
+//      val f1 = future.getRatesLocation1
+//      val f2 = future.getRatesLocation2
+//      for{
+//        v1 <- f1
+//        v2 <- f2
+//      } yield v1 + v2
+//    }
+//    val r2: Future[(Int, Int)] =
+//      future.getRatesLocation1.zip(future.getRatesLocation2)
+
+//    val r = future.getRatesLocation1.flatMap{ i =>
+//      Future.successful(i + 1)
+//    }
+
+//    future.getRatesLocation1.onComplete {
+//      case Failure(exception) => println(exception.getMessage)
+//      case Success(value) => println(value + 1)
+//    }
+
+//    val r3: Future[Int] = future.getRatesLocation1.recover{
+//      case e => 0
+//    }
+
+//    val f1 = future.getRatesLocation1(ec2)
+//    val f2 = future.getRatesLocation2(ec3)
 //
-//    t1.start()
-//    t1.join()
-//    t2.start()
+//    val f3 = f1.flatMap{v1 =>
+//      action(v1)
+//      f2.map{ v2 =>
+//        action(v2)
+//      }(ec4)
+//    }(ec5)
 
-    def rates = {
-      val t1 = threads.getRatesLocation1
-      val t2 = threads.getRatesLocation2
-      t1.start()
-      t2.start()
-      t1.join()
-      t2.join()
-    }
 
-    def rates2 = {
-      val t1: Int = threads.getRatesLocation3
-      val t2: Int = threads.getRatesLocation4
-      println(t1)
-      println(t2)
-    }
+    println(promise.p1.isCompleted)
+    println(promise.f1.isCompleted)
+    promise.p1.complete(Try(action(20)))
+    println(promise.p1.isCompleted)
+    println(promise.f1.isCompleted)
 
-    def rates3 = {
-      val t1 = threads.getRatesLocation5
-      val t2 = threads.getRatesLocation6
 
-      val t3: threads.ToyFuture[Int] = for{
-        v1 <- t1
-        v2 <- t2
-      } yield v1 + v2
+    println("End of main method")
 
-      t1.onComplete(i => println(s"Hello from future ${Thread.currentThread().getName} - $i"))
-      t2.onComplete(i => println(s"Hello from future ${Thread.currentThread().getName} - $i"))
-    }
-
-   // threads.printRunningTime(rates)
-   // threads.printRunningTime(rates2)
-   // threads.printRunningTime(rates3)
-
-    val runnable = new Runnable {
-      override def run(): Unit = {
-        Thread.sleep(1000)
-        println(s"Hello from runnable - ${Thread.currentThread().getName}")
-      }
-    }
-    val callable = new Callable[Int] {
-      override def call(): Int = {
-        Thread.sleep(1000)
-        println("Hello from Callable")
-        10 + 10
-      }
-    }
-
-    // executor.pool3.execute(runnable)
-    val f1: Future[Int] = executor.pool3.submit(callable)
-
-   // val i: Int = f1.get()
-  //  println(i)
-    println("after future get")
-    //executor.pool1.shutdown()
-   Thread.sleep(2000)
   }
+
+
 }
