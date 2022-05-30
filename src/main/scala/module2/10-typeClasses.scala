@@ -53,7 +53,6 @@ object type_classes {
   "foo".toJson
   12.toJson
   Option("bar").toJson
-  user.toJson
 
 
   // 1
