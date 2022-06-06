@@ -38,7 +38,7 @@ object functional_effects {
       /**
        * 1. Объявить исполняемую модель Console
        */
-       case class Console[A](unsafeRun: () => A, run: () => String){ self =>
+       case class Console[A](unsafeRun: () => A){ self =>
           def map[B](f: A => B): Console[B] =
             Console.succeed(f(self.unsafeRun()))
 
@@ -74,6 +74,7 @@ object functional_effects {
          name <- Console.readLine()
          _ <- Console.printLine(s"Привет, $name")
       } yield ()
+
 
       val p2: Console[Unit] = for{
         _ <- Console.printLine("Как тебя зовут?")
