@@ -8,9 +8,7 @@ object App {
 
   def main(args: Array[String]): Unit = {
 
-      // zio.Runtime.default.unsafeRun()
-
-    toyModel.echo.run()
+     zio.Runtime.default.unsafeRun(multipleErrors.app)
 
   }
 }
