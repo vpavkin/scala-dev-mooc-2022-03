@@ -13,7 +13,7 @@ object App {
   def main(args: Array[String]): Unit = {
 
     def f(v: Clock with  Console with Random): Clock with  Console with Random with UserService = ???
-     zio.Runtime.default.unsafeRun(di.e1.provideSome[Clock with  Console with Random](f))
+     println(zio.Runtime.default.unsafeRun(zioDS.ref.updateCounterRef))
 
   }
 }
