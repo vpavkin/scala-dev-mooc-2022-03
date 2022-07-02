@@ -17,6 +17,7 @@ import module3.cats_effect_homework.Wallet._
 // Нужно сделать интерпретатор Wallet[IO] который будет использовать Ref и запустить тест с помощью такого Wallet.
 object WalletTransferApp extends IOApp.Simple {
 
+  // функция, которую мы тестируем. Здесь менять ничего не нужно :)
   def transfer[F[_]: Monad](a: Wallet[F],
                             b: Wallet[F],
                             amount: BigDecimal): F[Unit] =
@@ -35,6 +36,7 @@ object WalletTransferApp extends IOApp.Simple {
   // todo: реализовать конструктор. Снова хитрая сигнатура, потому что создание Ref - это побочный эффект
   def wallet(balance: BigDecimal): IO[Wallet[IO]] = ???
 
+  // а это тест, который выполняет перевод с одного кошелька на другой и выводит балансы после операции. Тоже менять не нужно
   def testTransfer: IO[(BigDecimal, BigDecimal)] =
     for {
       w1 <- wallet(100)
