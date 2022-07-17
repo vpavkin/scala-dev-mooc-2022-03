@@ -10,11 +10,6 @@ object Dependencies {
 
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11"
   lazy val catsCore = "org.typelevel" %% "cats-core" % "2.3.0"
-  lazy val catsEffect : Seq[ModuleID] = Seq(
-    "org.typelevel" %% "cats-effect" % CatsEffectVersion,
-    "org.typelevel" %% "cats-effect-kernel" % CatsEffectVersion,
-    "org.typelevel" %% "cats-effect-std" % CatsEffectVersion
-  )
 
   lazy val catsEffect : Seq[ModuleID] = Seq(
     "org.typelevel" %% "cats-effect" % CatsEffectVersion,
