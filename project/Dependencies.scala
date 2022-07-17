@@ -16,6 +16,11 @@ object Dependencies {
     "org.typelevel" %% "cats-effect-std" % CatsEffectVersion
   )
 
+  lazy val catsEffect : Seq[ModuleID] = Seq(
+    "org.typelevel" %% "cats-effect" % CatsEffectVersion,
+    "org.typelevel" %% "cats-effect-kernel" % CatsEffectVersion,
+    "org.typelevel" %% "cats-effect-std" % CatsEffectVersion
+  )
   lazy val zio: Seq[ModuleID] = Seq(
     "dev.zio" %% "zio" % ZioVersion,
     "dev.zio" %% "zio-test" % ZioVersion,
