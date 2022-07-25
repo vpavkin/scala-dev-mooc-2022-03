@@ -13,6 +13,7 @@ lazy val root = (project in file("."))
     libraryDependencies += scalaTest % Test,
     libraryDependencies += catsCore,
     libraryDependencies ++= catsEffect,
+    libraryDependencies ++= fs2,
     addCompilerPlugin(Dependencies.kindProjector)
   )
 
