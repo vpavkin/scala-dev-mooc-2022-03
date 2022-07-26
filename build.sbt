@@ -14,6 +14,7 @@ lazy val root = (project in file("."))
     libraryDependencies += catsCore,
     libraryDependencies ++= catsEffect,
     libraryDependencies ++= fs2,
+    libraryDependencies ++= http4s,
     addCompilerPlugin(Dependencies.kindProjector)
   )
 
