@@ -8,6 +8,12 @@ def getUsername: IO[Option[String]] = IO.pure(Some("Bob"))
 def getId(name: String): IO[Option[Int]] = IO.pure(Some(42))
 def getPermissions(id: Int): IO[Option[String]] = IO.pure(Some("permissions"))
 
+//val result = for {
+//  userName <- getUsername
+//  id <- getId(userName)
+//  permissions <- getPermissions(id)
+//} yield (userName, id, permissions)
+
 val result = for {
   userName <- OptionT(getUsername)
   id <- OptionT(getId(userName))
