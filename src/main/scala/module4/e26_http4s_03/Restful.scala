@@ -1,14 +1,14 @@
-package module4.e25_http4s_02
+package module4.e26_http4s_03
 
-import cats.{Functor, Monad}
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
+import cats.{Functor, Monad}
 import com.comcast.ip4s.{Host, Port}
-import org.http4s.{AuthedRoutes, Header, HttpRoutes, Request, Status}
 import org.http4s.dsl.io._
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import org.http4s.server.{AuthMiddleware, Router}
+import org.http4s.{AuthedRoutes, Header, HttpRoutes, Request, Status}
 import org.typelevel.ci.CIString
 
 object Restful {
@@ -28,23 +28,12 @@ object Restful {
           .flatMap(_ => Ok("User has been registered"))
     }
 
+  def routes(db: Database[IO]) =
+    AuthMiddleware(authUser(db)).apply(authRoutes(db))
   def router(db: Database[IO]) =
-    addResponseHeaderMiddleware(
-      Router(
-        "/" -> AuthMiddleware(authUser(db)).apply(authRoutes(db))
-      )
+    Router(
+      "/" -> routes(db)
     )
-
-  def addResponseHeaderMiddleware[F[_]: Functor](
-      route: HttpRoutes[F]
-  ): HttpRoutes[F] =
-    Kleisli { req =>
-      val result = route(req)
-      result.map {
-        case Status.Successful(res) => res.putHeaders("X-Otus" -> "Hello!")
-        case res                    => res
-      }
-    }
 
   case class User(name: String)
 
@@ -61,23 +50,6 @@ object Restful {
           OptionT.pure(User("anon"))
       }
     }
-
-  def authMiddlewareHeaders[F[_]: Monad](
-      db: Database[F]
-  )(route: HttpRoutes[F]): HttpRoutes[F] = {
-    val header: Header.ToRaw = "Otus-Authorized" -> "true"
-    Kleisli { (req: Request[F]) =>
-      req.uri.path.segments.toList match {
-        case _ :: username :: _ =>
-          OptionT.liftF(db.get).flatMap { users =>
-            if (users.contains(username.toString)) route(req.putHeaders(header))
-            else route(req)
-          }
-        case _ =>
-          route(req)
-      }
-    }
-  }
 
   def authRoutes(db: Database[IO]): AuthedRoutes[User, IO] =
     AuthedRoutes.of {

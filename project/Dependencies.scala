@@ -10,6 +10,7 @@ object Dependencies {
   lazy val PureconfigVersion = "0.17.1"
   lazy val FS2Version = "3.2.10"
   lazy val Http4sVersion = "0.23.13"
+  lazy val CirceVersion = "0.14.2"
 
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11"
   lazy val catsCore = "org.typelevel" %% "cats-core" % "2.3.0"
@@ -30,6 +31,13 @@ object Dependencies {
     "org.http4s" %% "http4s-circe" % Http4sVersion,
     "org.http4s" %% "http4s-ember-server" % Http4sVersion,
     "org.http4s" %% "http4s-ember-client" % Http4sVersion
+  )
+
+  lazy val circe: Seq[ModuleID] = Seq(
+    "io.circe" %% "circe-core" % CirceVersion,
+    "io.circe" %% "circe-parser" % CirceVersion,
+    "io.circe" %% "circe-generic" % CirceVersion,
+    "io.circe" %% "circe-literal" % CirceVersion
   )
 
   lazy val zio: Seq[ModuleID] = Seq(
