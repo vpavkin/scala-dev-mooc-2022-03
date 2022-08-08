@@ -2,16 +2,23 @@ package module4.e26_http4s_03
 
 import CirceJson._
 import cats.effect.{IO, Ref}
-import org.http4s.{EntityDecoder, Request}
+import org.http4s.{EntityDecoder, Method, Request}
 import org.http4s.circe._
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.implicits._
 import CirceEntityDecoder._
+import CirceEntityEncoder._
 
 object HttpClient {
   val builder = EmberClientBuilder.default[IO].build
 
-  val request = Request[IO]().withUri(uri"http://localhost:8080/hello/world")
+  val request = Request[IO](uri = uri"http://localhost:8080/hello/world")
+
+  val postRequest =
+    Request[IO](
+      method = Method.POST,
+      uri = uri"http://localhost:8080/public/echo"
+    ).withEntity(User("Vladimir", Some("vova@example.com")))
 
   val result = for {
     client <- builder

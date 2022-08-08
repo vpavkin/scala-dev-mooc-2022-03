@@ -34,6 +34,9 @@ object CirceJson extends IOApp.Simple {
       } yield User(name, email)
     }
 
+  implicit val encoderUser: Encoder[User] =
+    deriveEncoder
+
   val parsedResult =
     parse("""{"name": "Bob", "email": null}""").flatMap(_.as[User])
 
