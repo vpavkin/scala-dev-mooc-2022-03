@@ -25,9 +25,29 @@ trait Wallet[F[_]] {
 // - java.nio.file.Files.exists
 // - java.nio.file.Paths.get
 final class FileWallet[F[_]: Sync](id: WalletId) extends Wallet[F] {
-  def balance: F[BigDecimal] = ???
-  def topup(amount: BigDecimal): F[Unit] = ???
-  def withdraw(amount: BigDecimal): F[Either[WalletError, Unit]] = ???
+  
+  def balance: F[BigDecimal] = for {
+    path <- Sync[F].delay(java.nio.file.Paths.get(pathStr(id)))
+    lines <- Sync[F].delay(java.nio.file.Files.readAllLines(path))
+    balance <- Sync[F].delay(BigDecimal(lines.get(0)))
+  } yield balance
+  
+  def topup(amount: BigDecimal): F[Unit] = for {
+    path <- Sync[F].delay(java.nio.file.Paths.get(pathStr(id)))
+    linesIn <- Sync[F].delay(java.nio.file.Files.readAllLines(path))
+    balanceIn <- Sync[F].delay(BigDecimal(linesIn.get(0)))
+    balanceOut <- Sync[F].delay((balanceIn + amount).toString())
+    _ <- Sync[F].delay(overwriteFile(path, balanceOut))
+  } yield()
+  
+  def withdraw(amount: BigDecimal): F[Either[WalletError, Unit]] = for {
+    path <- Sync[F].delay(java.nio.file.Paths.get(pathStr(id)))
+    linesIn <- Sync[F].delay(java.nio.file.Files.readAllLines(path))
+    balanceIn <- Sync[F].delay(BigDecimal(linesIn.get(0)))
+    balanceOut <- Sync[F].delay(subtractBalance(balanceIn, amount))
+    res <- Sync[F].delay(balanceOut.map(b => overwriteFile(path, b)))
+    _ <- res.liftTo[F]
+  } yield res
 }
 
 object Wallet {
@@ -37,10 +57,36 @@ object Wallet {
   // Здесь нужно использовать обобщенную версию уже пройденного вами метода IO.delay,
   // вызывается она так: Sync[F].delay(...)
   // Тайпкласс Sync из cats-effect описывает возможность заворачивания сайд-эффектов
-  def fileWallet[F[_]: Sync](id: WalletId): F[Wallet[F]] = ???
+  
+  def fileWallet[F[_]: Sync](id: WalletId): F[Wallet[F]] = for {
+    wallet <- Sync[F].delay(new FileWallet[F](id))
+    path <- Sync[F].delay(java.nio.file.Paths.get(pathStr(id)))
+    file <- Sync[F].delay(createFile(path))
+    _ <- Sync[F].delay(file.fold(_ => (), identity))
+  } yield wallet
 
   type WalletId = String
 
-  sealed trait WalletError
+  sealed trait WalletError extends Throwable
   case object BalanceTooLow extends WalletError
+  case object WalletIsExists extends WalletError
+  
+  def pathStr(id: WalletId): WalletId = "src/main/resources/wallets/" + id
+
+  def overwriteFile(path: Path, content: Any): Unit = {
+    java.nio.file.Files.write(path, content.toString.getBytes(), StandardOpenOption.TRUNCATE_EXISTING)
+  }
+
+  def subtractBalance(balanceIn: BigDecimal, amount: BigDecimal): Either[WalletError, BigDecimal] =
+    Either.cond(balanceIn >= amount, balanceIn - amount, BalanceTooLow)
+
+  def createFile(path: Path): Either[WalletError, Unit] = {
+    val exists = java.nio.file.Files.exists(path)
+    lazy val startBalance = "0.0"
+    Either.cond(
+      !exists,
+      java.nio.file.Files.write(path, startBalance.getBytes(), StandardOpenOption.CREATE),
+      WalletIsExists
+    )
+  }
 }
