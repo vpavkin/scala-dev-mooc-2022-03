@@ -2,6 +2,7 @@ package module3.cats_effect_homework
 
 import cats.effect.{IO, IOApp}
 import cats.implicits._
+import scala.concurrent.duration.DurationLong
 
 // Поиграемся с кошельками на файлах и файберами.
 
