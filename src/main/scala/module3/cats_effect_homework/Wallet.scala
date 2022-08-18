@@ -27,27 +27,27 @@ trait Wallet[F[_]] {
 final class FileWallet[F[_]: Sync](id: WalletId) extends Wallet[F] {
   
   def balance: F[BigDecimal] = for {
-    path <- Sync[F].delay(java.nio.file.Paths.get(pathStr(id)))
-    lines <- Sync[F].delay(java.nio.file.Files.readAllLines(path))
-    balance <- Sync[F].delay(BigDecimal(lines.get(0)))
+    path <- Sync[F].pure(java.nio.file.Paths.get(pathStr(id)))
+    lines <- Sync[F].pure(java.nio.file.Files.readAllLines(path))
+    balance <- Sync[F].pure(BigDecimal(lines.get(0)))
   } yield balance
   
   def topup(amount: BigDecimal): F[Unit] = for {
-    path <- Sync[F].delay(java.nio.file.Paths.get(pathStr(id)))
-    linesIn <- Sync[F].delay(java.nio.file.Files.readAllLines(path))
-    balanceIn <- Sync[F].delay(BigDecimal(linesIn.get(0)))
-    balanceOut <- Sync[F].delay((balanceIn + amount).toString())
-    _ <- Sync[F].delay(overwriteFile(path, balanceOut))
+    path <- Sync[F].pure(java.nio.file.Paths.get(pathStr(id)))
+    linesIn <- Sync[F].pure(java.nio.file.Files.readAllLines(path))
+    balanceIn <- Sync[F].pure(BigDecimal(linesIn.get(0)))
+    balanceOut <- Sync[F].pure((balanceIn + amount).toString())
+    _ <- overwriteFile(path, balanceOut)
   } yield()
   
   def withdraw(amount: BigDecimal): F[Either[WalletError, Unit]] = for {
-    path <- Sync[F].delay(java.nio.file.Paths.get(pathStr(id)))
-    linesIn <- Sync[F].delay(java.nio.file.Files.readAllLines(path))
-    balanceIn <- Sync[F].delay(BigDecimal(linesIn.get(0)))
-    balanceOut <- Sync[F].delay(subtractBalance(balanceIn, amount))
-    res <- Sync[F].delay(balanceOut.map(b => overwriteFile(path, b)))
-    _ <- res.liftTo[F]
-  } yield res
+    path <- Sync[F].pure(java.nio.file.Paths.get(pathStr(id)))
+    linesIn <- Sync[F].pure(java.nio.file.Files.readAllLines(path))
+    balanceIn <- Sync[F].pure(BigDecimal(linesIn.get(0)))
+    balanceOut <- Sync[F].pure(subtractBalance(balanceIn, amount))
+    res <- balanceOut.liftTo[F]
+    _ <- overwriteFile(path, res)
+  } yield balanceOut.void
 }
 
 object Wallet {
@@ -59,11 +59,9 @@ object Wallet {
   // Тайпкласс Sync из cats-effect описывает возможность заворачивания сайд-эффектов
   
   def fileWallet[F[_]: Sync](id: WalletId): F[Wallet[F]] = for {
-    wallet <- Sync[F].delay(new FileWallet[F](id))
-    path <- Sync[F].delay(java.nio.file.Paths.get(pathStr(id)))
-    file <- Sync[F].delay(createFile(path))
-    _ <- Sync[F].delay(file.fold(_ => (), identity))
-  } yield wallet
+    path <- Sync[F].pure(java.nio.file.Paths.get(pathStr(id)))
+    _ <- createFile(path).rethrow
+  } yield new FileWallet[F](id)
 
   type WalletId = String
 
@@ -73,20 +71,24 @@ object Wallet {
   
   def pathStr(id: WalletId): WalletId = "src/main/resources/wallets/" + id
 
-  def overwriteFile(path: Path, content: Any): Unit = {
-    java.nio.file.Files.write(path, content.toString.getBytes(), StandardOpenOption.TRUNCATE_EXISTING)
+  def overwriteFile[F[_]: Sync](path: Path, content: Any): F[Unit] = {
+    Sync[F].delay(
+      java.nio.file.Files.write(path, content.toString.getBytes(), StandardOpenOption.TRUNCATE_EXISTING)
+    )
   }
 
   def subtractBalance(balanceIn: BigDecimal, amount: BigDecimal): Either[WalletError, BigDecimal] =
     Either.cond(balanceIn >= amount, balanceIn - amount, BalanceTooLow)
 
-  def createFile(path: Path): Either[WalletError, Unit] = {
+  def createFile[F[_]: Sync](path: Path): F[Either[WalletError, Unit]] = {
     val exists = java.nio.file.Files.exists(path)
     lazy val startBalance = "0.0"
-    Either.cond(
-      !exists,
-      java.nio.file.Files.write(path, startBalance.getBytes(), StandardOpenOption.CREATE),
-      WalletIsExists
+    Sync[F].delay(
+      Either.cond(
+        !exists,
+        java.nio.file.Files.write(path, startBalance.getBytes(), StandardOpenOption.CREATE),
+        WalletIsExists
+      )
     )
   }
 }
